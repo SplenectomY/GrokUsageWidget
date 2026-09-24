@@ -1,0 +1,53 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "SemVer tag to publish (vMAJOR.MINOR.PATCH)"
+        required: true
+        default: "v0.1.0"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Ensure icon
+        shell: pwsh
+        run: |
+          if (-not (Test-Path grok.ico)) {
+            Invoke-WebRequest -Uri "https://grok.com/images/favicon.ico" -OutFile grok.ico
+          }
+
+      - name: Publish win-x64
+        run: dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile=false -o publish
+
+      - name: Pack
+        shell: pwsh
+        run: |
+          $tag = "${{ github.event.inputs.tag }}"
+          if ([string]::IsNullOrWhiteSpace($tag)) { $tag = "${{ github.ref_name }}" }
+          Compress-Archive -Path publish\* -DestinationPath "GrokUsageWidget-$tag-win-x64.zip"
+          echo "REL_TAG=$tag" >> $env:GITHUB_ENV
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          name: ${{ github.event.inputs.tag || github.ref_name }}
+          generate_release_notes: true
+          files: |
+            publish/GrokUsageWidget.exe
+            GrokUsageWidget-${{ github.event.inputs.tag || github.ref_name }}-win-x64.zip
