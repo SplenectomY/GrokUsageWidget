@@ -2,7 +2,7 @@
 
 [![Release](https://img.shields.io/github/v/release/SplenectomY/GrokUsageWidget)](https://github.com/SplenectomY/GrokUsageWidget/releases)
 
-Always-on-top Windows meter for the SuperGrok **weekly** pool. Current version: **0.2.2**.
+Always-on-top Windows meter for the SuperGrok **weekly** pool. Current version: **0.2.3**.
 
 Versions follow [SemVer](https://semver.org/). Git tags are `vMAJOR.MINOR.PATCH`.
 
@@ -10,8 +10,16 @@ Versions follow [SemVer](https://semver.org/). Git tags are `vMAJOR.MINOR.PATCH`
 
 Get the signed-off build from [Releases](https://github.com/SplenectomY/GrokUsageWidget/releases):
 
-- `GrokUsageWidget.exe` — needs the [.NET 8 desktop runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
-- `GrokUsageWidget-vX.Y.Z-win-x64.zip` — exe + `grok.ico`
+- `GrokUsageWidget.exe` — self-contained win-x64 (no extra .NET install, no sidecar DLL)
+- `GrokUsageWidget-vX.Y.Z-win-x64.zip` — same exe + `grok.ico`
+
+Do not grab only the tiny stub from older releases. `0.2.2` and below needed `GrokUsageWidget.dll` next to the exe; Downloads had the stub alone, so it exited with no window. Dropping that stub into a local `bin\Release` folder “fixed” it because the DLL was already there.
+
+SmartScreen will still warn on a first run from the internet (`Zone.Identifier`). Run anyway, or:
+
+```powershell
+Unblock-File C:\Dev\GrokUsageWidget\GrokUsageWidget.exe
+```
 
 ## What it does
 
@@ -28,7 +36,7 @@ Needs the .NET 8 SDK (Visual Studio + “.NET desktop development”).
 ```powershell
 git clone https://github.com/SplenectomY/GrokUsageWidget.git
 cd GrokUsageWidget
-dotnet publish -c Release -r win-x64 --self-contained false -o publish
+dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish
 .\publish\GrokUsageWidget.exe
 ```
 

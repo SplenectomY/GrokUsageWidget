@@ -4,6 +4,11 @@ All notable changes are versioned with [SemVer](https://semver.org/): `MAJOR.MIN
 
 Git tags are `vMAJOR.MINOR.PATCH` (example: `v0.1.0`).
 
+## [0.2.3] — 2026-09-27
+
+### Fixed
+- Release exe is now **self-contained single-file**. The old GitHub `GrokUsageWidget.exe` was only the apphost stub; it needed `GrokUsageWidget.dll` beside it. That is why it died in Downloads and worked after you dropped it into `bin\Release\net8.0-windows`.
+
 ## [0.2.2] — 2026-09-27
 
 ### Fixed

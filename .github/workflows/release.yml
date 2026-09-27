@@ -31,8 +31,14 @@ jobs:
             Invoke-WebRequest -Uri "https://grok.com/images/favicon.ico" -OutFile grok.ico
           }
 
-      - name: Publish win-x64
-        run: dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile=false -o publish
+      - name: Publish win-x64 single-file
+        run: >
+          dotnet publish -c Release -r win-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:EnableCompressionInSingleFile=true
+          -o publish
 
       - name: Pack
         shell: pwsh
