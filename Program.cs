@@ -15,88 +15,66 @@ internal static class Program
         Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
+        Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
+        Application.ThreadException += (_, e) => CrashLog.Write("UI " + e.Exception);
+        AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+            CrashLog.Write("domain " + e.ExceptionObject);
 
-        using var reveal = new EventWaitHandle(false, EventResetMode.AutoReset, RevealEventName);
-        using var mutex = new Mutex(true, MutexName, out var created);
-        if (!created)
+        try
         {
-            if (!TakeOverOrSignal(reveal))
-                return;
-            try { mutex.WaitOne(5000); }
-            catch (AbandonedMutexException) { /* previous instance died holding it */ }
-        }
+            CrashLog.Write("start pid=" + Environment.ProcessId + " path=" + Startup.ExePath);
+            KillOtherCopies();
 
-        Application.Run(new MeterForm(reveal));
-        GC.KeepAlive(mutex);
-    }
-
-    private static bool TakeOverOrSignal(EventWaitHandle reveal)
-    {
-        var self = Startup.ExePath;
-        var others = OtherCopies();
-        var otherPath = others
-            .Select(p =>
+            using var reveal = new EventWaitHandle(false, EventResetMode.AutoReset, RevealEventName);
+            using var mutex = new Mutex(true, MutexName, out var created);
+            if (!created)
             {
-                try { return p.MainModule?.FileName; }
-                catch { return null; }
-            })
-            .FirstOrDefault(p => !string.IsNullOrWhiteSpace(p));
-
-        var differentFile = !string.IsNullOrWhiteSpace(otherPath)
-                            && !string.IsNullOrWhiteSpace(self)
-                            && !string.Equals(
-                                Path.GetFullPath(otherPath!),
-                                Path.GetFullPath(self),
-                                StringComparison.OrdinalIgnoreCase);
-
-        if (differentFile)
-        {
-            var pick = MessageBox.Show(
-                "Grok Usage Widget is already running from:\n"
-                + otherPath + "\n\n"
-                + "This file is:\n"
-                + self + "\n\n"
-                + "Yes — quit that copy and run this one\n"
-                + "No — just find the one already open",
-                "Grok Usage Widget",
-                MessageBoxButtons.YesNoCancel,
-                MessageBoxIcon.Question);
-            if (pick == DialogResult.Cancel)
-                return false;
-            if (pick == DialogResult.No)
-            {
-                reveal.Set();
-                return false;
-            }
-
-            foreach (var p in others)
-            {
-                try
-                {
-                    p.Kill();
-                    p.WaitForExit(4000);
-                }
-                catch { /* already gone */ }
+                CrashLog.Write("mutex busy after kill; waiting");
+                try { mutex.WaitOne(5000); }
+                catch (AbandonedMutexException) { CrashLog.Write("mutex abandoned; taken"); }
             }
 
             if (Startup.IsEnabled())
             {
                 try { Startup.SetEnabled(true); }
-                catch { /* Run key stays on the old path */ }
+                catch (Exception ex) { CrashLog.Write("startup key " + ex.Message); }
             }
-            return true;
-        }
 
-        reveal.Set();
-        return false;
+            Application.Run(new MeterForm(reveal));
+            GC.KeepAlive(mutex);
+            CrashLog.Write("exit");
+        }
+        catch (Exception ex)
+        {
+            CrashLog.Write("fatal " + ex);
+            MessageBox.Show(ex.Message, "Grok Usage Widget", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
-    private static Process[] OtherCopies()
+    private static void KillOtherCopies()
     {
         var me = Environment.ProcessId;
-        return Process.GetProcessesByName("GrokUsageWidget")
-            .Where(p => p.Id != me)
-            .ToArray();
+        foreach (var p in Process.GetProcessesByName("GrokUsageWidget"))
+        {
+            if (p.Id == me)
+                continue;
+            try
+            {
+                CrashLog.Write("kill pid=" + p.Id);
+                p.Kill(entireProcessTree: true);
+                p.WaitForExit(4000);
+            }
+            catch (Exception ex)
+            {
+                CrashLog.Write("kill failed pid=" + p.Id + " " + ex.Message);
+                try
+                {
+                    p.Kill();
+                    p.WaitForExit(2000);
+                }
+                catch { /* last resort */ }
+            }
+        }
     }
 }
 
@@ -138,6 +116,20 @@ internal static class Paths
 
     public static string AuthJson => Path.Combine(GrokHome, "auth.json");
     public static string WidgetConfig => Path.Combine(GrokHome, "usage-widget.json");
+    public static string WidgetLog => Path.Combine(GrokHome, "usage-widget.log");
+}
+
+internal static class CrashLog
+{
+    public static void Write(string msg)
+    {
+        try
+        {
+            Directory.CreateDirectory(Paths.GrokHome);
+            File.AppendAllText(Paths.WidgetLog, DateTime.Now.ToString("s") + " " + msg + Environment.NewLine);
+        }
+        catch { /* nowhere to write */ }
+    }
 }
 
 internal sealed class WidgetSettings

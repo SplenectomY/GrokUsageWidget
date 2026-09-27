@@ -4,6 +4,12 @@ All notable changes are versioned with [SemVer](https://semver.org/): `MAJOR.MIN
 
 Git tags are `vMAJOR.MINOR.PATCH` (example: `v0.1.0`).
 
+## [0.2.2] — 2026-09-27
+
+### Fixed
+- Launch always force-kills other `GrokUsageWidget` processes, then starts this copy. No more silent exit when a hidden/stuck instance owns the mutex.
+- Writes `%USERPROFILE%\.grok\usage-widget.log` on start, kill, and crash.
+
 ## [0.2.1] — 2026-09-27
 
 ### Fixed
