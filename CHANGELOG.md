@@ -4,6 +4,14 @@ All notable changes are versioned with [SemVer](https://semver.org/): `MAJOR.MIN
 
 Git tags are `vMAJOR.MINOR.PATCH` (example: `v0.1.0`).
 
+## [0.2.0] — 2026-09-27
+
+### Added
+- Tray **Reveal**: show the card, center it on the primary monitor, bring it to front. Does not overwrite the saved dock position.
+
+### Changed
+- Menu label is **Open Settings → Usage**. Grok has no public `/usage` URL; this still opens https://grok.com/ (sign in → profile → Settings → Usage).
+
 ## [0.1.0] — 2026-09-24
 
 ### Added

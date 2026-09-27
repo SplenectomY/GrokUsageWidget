@@ -2,7 +2,7 @@
 
 [![Release](https://img.shields.io/github/v/release/SplenectomY/GrokUsageWidget)](https://github.com/SplenectomY/GrokUsageWidget/releases)
 
-Always-on-top Windows meter for the SuperGrok **weekly** pool. Current version: **0.1.0**.
+Always-on-top Windows meter for the SuperGrok **weekly** pool. Current version: **0.2.0**.
 
 Versions follow [SemVer](https://semver.org/). Git tags are `vMAJOR.MINOR.PATCH`.
 
@@ -36,7 +36,8 @@ dotnet publish -c Release -r win-x64 --self-contained false -o publish
 
 - Drag the card; position **and monitor** are saved to `%USERPROFILE%\.grok\usage-widget.json`.
 - Double-click the tray icon to show/hide.
-- Right-click tray: Refresh, Open Usage page, **Start with Windows**, Hide, Exit.
+- Right-click tray: **Reveal**, Refresh, Open Settings → Usage, **Start with Windows**, Hide, Exit.
+- **Reveal** shows a missing card and centers it on the primary monitor (saved dock position is left alone until you drag again).
 - Start with Windows uses HKCU Run (this Windows user only). Enable it from the published exe, not `dotnet run`.
 - Default poll: 60 seconds.
 

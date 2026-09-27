@@ -571,6 +571,7 @@ internal sealed class MeterForm : Form
     private readonly NotifyIcon _tray = new();
     private UsageSnapshot? _last;
     private bool _dragging;
+    private bool _suppressSave;
     private Point _dragOffset;
 
     public MeterForm()
@@ -623,8 +624,9 @@ internal sealed class MeterForm : Form
         Controls.Add(_barTrack);
 
         var menu = new ContextMenuStrip();
+        menu.Items.Add("Reveal", null, (_, _) => Reveal());
         menu.Items.Add("Refresh now", null, async (_, _) => await RefreshAsync());
-        menu.Items.Add("Open Usage page", null, (_, _) =>
+        menu.Items.Add("Open Settings → Usage", null, (_, _) =>
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
             {
                 FileName = "https://grok.com/",
@@ -676,7 +678,7 @@ internal sealed class MeterForm : Form
 
         LocationChanged += (_, _) =>
         {
-            if (!_dragging && Visible)
+            if (!_dragging && !_suppressSave && Visible)
                 SavePosition();
         };
 
@@ -700,6 +702,29 @@ internal sealed class MeterForm : Form
             SavePosition();
             _tray.Visible = false;
         };
+    }
+
+    private void Reveal()
+    {
+        var wa = Screen.PrimaryScreen?.WorkingArea
+                 ?? new Rectangle(0, 0, 1280, 720);
+        _suppressSave = true;
+        try
+        {
+            Visible = true;
+            WindowState = FormWindowState.Normal;
+            Location = new Point(
+                wa.Left + Math.Max(0, (wa.Width - Width) / 2),
+                wa.Top + Math.Max(0, (wa.Height - Height) / 2));
+            TopMost = true;
+            Show();
+            BringToFront();
+            Activate();
+        }
+        finally
+        {
+            _suppressSave = false;
+        }
     }
 
     private void SavePosition()
