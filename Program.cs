@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using Microsoft.Win32;
 
@@ -5,18 +6,97 @@ namespace GrokUsageWidget;
 
 internal static class Program
 {
+    internal const string MutexName = @"Local\GrokUsageWidget.SingleInstance";
+    internal const string RevealEventName = @"Local\GrokUsageWidget.Reveal";
+
     [STAThread]
     private static void Main()
     {
-        using var mutex = new Mutex(true, @"Local\GrokUsageWidget.SingleInstance", out var created);
-        if (!created)
-            return;
-
         Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
-        Application.Run(new MeterForm());
+
+        using var reveal = new EventWaitHandle(false, EventResetMode.AutoReset, RevealEventName);
+        using var mutex = new Mutex(true, MutexName, out var created);
+        if (!created)
+        {
+            if (!TakeOverOrSignal(reveal))
+                return;
+            try { mutex.WaitOne(5000); }
+            catch (AbandonedMutexException) { /* previous instance died holding it */ }
+        }
+
+        Application.Run(new MeterForm(reveal));
         GC.KeepAlive(mutex);
+    }
+
+    private static bool TakeOverOrSignal(EventWaitHandle reveal)
+    {
+        var self = Startup.ExePath;
+        var others = OtherCopies();
+        var otherPath = others
+            .Select(p =>
+            {
+                try { return p.MainModule?.FileName; }
+                catch { return null; }
+            })
+            .FirstOrDefault(p => !string.IsNullOrWhiteSpace(p));
+
+        var differentFile = !string.IsNullOrWhiteSpace(otherPath)
+                            && !string.IsNullOrWhiteSpace(self)
+                            && !string.Equals(
+                                Path.GetFullPath(otherPath!),
+                                Path.GetFullPath(self),
+                                StringComparison.OrdinalIgnoreCase);
+
+        if (differentFile)
+        {
+            var pick = MessageBox.Show(
+                "Grok Usage Widget is already running from:\n"
+                + otherPath + "\n\n"
+                + "This file is:\n"
+                + self + "\n\n"
+                + "Yes — quit that copy and run this one\n"
+                + "No — just find the one already open",
+                "Grok Usage Widget",
+                MessageBoxButtons.YesNoCancel,
+                MessageBoxIcon.Question);
+            if (pick == DialogResult.Cancel)
+                return false;
+            if (pick == DialogResult.No)
+            {
+                reveal.Set();
+                return false;
+            }
+
+            foreach (var p in others)
+            {
+                try
+                {
+                    p.Kill();
+                    p.WaitForExit(4000);
+                }
+                catch { /* already gone */ }
+            }
+
+            if (Startup.IsEnabled())
+            {
+                try { Startup.SetEnabled(true); }
+                catch { /* Run key stays on the old path */ }
+            }
+            return true;
+        }
+
+        reveal.Set();
+        return false;
+    }
+
+    private static Process[] OtherCopies()
+    {
+        var me = Environment.ProcessId;
+        return Process.GetProcessesByName("GrokUsageWidget")
+            .Where(p => p.Id != me)
+            .ToArray();
     }
 }
 
@@ -569,13 +649,16 @@ internal sealed class MeterForm : Form
     private readonly Panel _barFill = new();
     private readonly Panel _barTrack = new();
     private readonly NotifyIcon _tray = new();
+    private readonly EventWaitHandle _revealPulse;
+    private readonly CancellationTokenSource _revealCts = new();
     private UsageSnapshot? _last;
     private bool _dragging;
     private bool _suppressSave;
     private Point _dragOffset;
 
-    public MeterForm()
+    public MeterForm(EventWaitHandle revealPulse)
     {
+        _revealPulse = revealPulse;
         Text = "Grok usage";
         FormBorderStyle = FormBorderStyle.None;
         ShowInTaskbar = false;
@@ -695,13 +778,44 @@ internal sealed class MeterForm : Form
         Shown += async (_, _) =>
         {
             PlaceOnScreen();
+            StartRevealListener();
             await RefreshAsync();
         };
         FormClosing += (_, _) =>
         {
+            _revealCts.Cancel();
+            try { _revealPulse.Set(); } catch { /* wake listener */ }
             SavePosition();
             _tray.Visible = false;
         };
+    }
+
+    private void StartRevealListener()
+    {
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                while (!_revealCts.IsCancellationRequested)
+                {
+                    if (_revealPulse.WaitOne(500) && !_revealCts.IsCancellationRequested)
+                    {
+                        try
+                        {
+                            if (IsHandleCreated)
+                                BeginInvoke(Reveal);
+                        }
+                        catch { /* shutting down */ }
+                    }
+                }
+            }
+            catch (ObjectDisposedException) { /* exit */ }
+        })
+        {
+            IsBackground = true,
+            Name = "GrokUsageReveal"
+        };
+        thread.Start();
     }
 
     private void Reveal()

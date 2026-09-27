@@ -4,6 +4,13 @@ All notable changes are versioned with [SemVer](https://semver.org/): `MAJOR.MIN
 
 Git tags are `vMAJOR.MINOR.PATCH` (example: `v0.1.0`).
 
+## [0.2.1] — 2026-09-27
+
+### Fixed
+- The download is the app, not an installer. A second launch used to exit silently because of the single-instance mutex.
+- Second launch now **Reveals** the running card.
+- If the file you double-clicked is a *different copy* (Downloads vs the installed exe), you get Yes = replace / No = find the old one.
+
 ## [0.2.0] — 2026-09-27
 
 ### Added
