@@ -4,6 +4,11 @@ All notable changes are versioned with [SemVer](https://semver.org/): `MAJOR.MIN
 
 Git tags are `vMAJOR.MINOR.PATCH` (example: `v0.1.0`).
 
+## [0.2.5] — 2026-10-04
+
+### Fixed
+- Card no longer sticks to the cursor after a drag. Mouse-up on the credits label, the bar, or outside the card was never ending the drag, so the next hover chased the pointer. Drag now captures the mouse and drops the drag if the button is up.
+
 ## [0.2.4] — 2026-10-04
 
 ### Added

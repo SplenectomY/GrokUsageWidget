@@ -119,15 +119,14 @@ internal sealed class MeterForm : Form
         };
 
         MouseDown += BeginDrag;
-        title.MouseDown += BeginDrag;
-        _pct.MouseDown += BeginDrag;
-        _sub.MouseDown += BeginDrag;
         MouseMove += DragMove;
         MouseUp += EndDrag;
-        title.MouseMove += DragMove;
-        title.MouseUp += EndDrag;
-        _pct.MouseMove += DragMove;
-        _pct.MouseUp += EndDrag;
+        foreach (Control child in Controls)
+        {
+            child.MouseDown += BeginDrag;
+            child.MouseMove += DragMove;
+            child.MouseUp += EndDrag;
+        }
 
         LocationChanged += (_, _) =>
         {
@@ -285,24 +284,39 @@ internal sealed class MeterForm : Form
     {
         if (e.Button != MouseButtons.Left) return;
         _dragging = true;
-        _dragOffset = e.Location;
-        if (sender is Control c && c != this)
-            _dragOffset = new Point(e.X + c.Left, e.Y + c.Top);
+        _dragOffset = PointToClient(Cursor.Position);
+        Capture = true;
     }
 
     private void DragMove(object? sender, MouseEventArgs e)
     {
         if (!_dragging) return;
-        var screen = PointToScreen(e.Location);
-        if (sender is Control c && c != this)
-            screen = c.PointToScreen(e.Location);
+        if ((MouseButtons & MouseButtons.Left) == 0)
+        {
+            EndDrag();
+            return;
+        }
+        var screen = Cursor.Position;
         Location = new Point(screen.X - _dragOffset.X, screen.Y - _dragOffset.Y);
     }
 
-    private void EndDrag(object? sender, MouseEventArgs e)
+    private void EndDrag(object? sender, MouseEventArgs e) => EndDrag();
+
+    private void EndDrag()
     {
+        if (!_dragging && !Capture)
+            return;
         _dragging = false;
+        if (Capture)
+            Capture = false;
         SavePosition();
+    }
+
+    protected override void OnMouseCaptureChanged(EventArgs e)
+    {
+        base.OnMouseCaptureChanged(e);
+        if (!Capture && _dragging)
+            EndDrag();
     }
 
     private async Task RefreshAsync()
