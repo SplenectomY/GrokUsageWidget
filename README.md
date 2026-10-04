@@ -4,6 +4,8 @@
 
 Always-on-top Windows meter for the SuperGrok **weekly** usage pool. Current version: **0.2.4**.
 
+<img width="215" height="68" alt="image" src="https://github.com/user-attachments/assets/7d651981-69d4-46c7-a0c4-7e3e21630428" />
+
 Versions follow [SemVer](https://semver.org/). Git tags are `vMAJOR.MINOR.PATCH`.
 
 New to Grok, first-time setup, or wondering whether this helps with Unity / MCP / the browser? See **[Getting started](docs/Getting-Started.md)**.
