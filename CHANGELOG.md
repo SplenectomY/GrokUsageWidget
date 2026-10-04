@@ -4,6 +4,11 @@ All notable changes are versioned with [SemVer](https://semver.org/): `MAJOR.MIN
 
 Git tags are `vMAJOR.MINOR.PATCH` (example: `v0.1.0`).
 
+## [0.2.4] — 2026-10-04
+
+### Added
+- Extra usage credits on the card and tray tooltip (`$4.74`), from `prepaidBalance` on the same billing call the CLI uses. Hidden when the balance is zero. Values are USD cents from the API.
+
 ## [0.2.3] — 2026-09-27
 
 ### Fixed

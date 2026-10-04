@@ -432,6 +432,7 @@ internal sealed class UsageSnapshot
     public bool Ok { get; init; }
     public string Status { get; init; } = "";
     public double? UsedPercent { get; init; }
+    public decimal? ExtraCreditsUsd { get; init; }
     public DateTimeOffset? ResetsAt { get; init; }
     public string? BuildShare { get; init; }
 }
@@ -541,11 +542,17 @@ internal static class BillingClient
             if (pct is null)
                 return new UsageSnapshot { Ok = false, Status = "plus payload — no %" };
 
+            var extraCents = ReadDouble(config, "prepaidBalance", "prepaid_balance");
+            decimal? extraUsd = extraCents is > 0
+                ? Math.Round((decimal)extraCents.Value / 100m, 2, MidpointRounding.AwayFromZero)
+                : null;
+
             return new UsageSnapshot
             {
                 Ok = true,
                 Status = "ok",
                 UsedPercent = pct,
+                ExtraCreditsUsd = extraUsd,
                 ResetsAt = end,
                 BuildShare = build
             };
@@ -638,6 +645,7 @@ internal sealed class MeterForm : Form
     private readonly System.Windows.Forms.Timer _clock = new();
     private readonly Label _pct = new();
     private readonly Label _sub = new();
+    private readonly Label _credits = new();
     private readonly Panel _barFill = new();
     private readonly Panel _barTrack = new();
     private readonly NotifyIcon _tray = new();
@@ -684,6 +692,13 @@ internal sealed class MeterForm : Form
         _sub.MaximumSize = new Size(124, 32);
         _sub.Text = "starting…";
 
+        _credits.AutoSize = true;
+        _credits.Font = new Font("Segoe UI Semibold", 8f);
+        _credits.ForeColor = Color.FromArgb(230, 190, 70);
+        _credits.Location = new Point(118, 8);
+        _credits.Text = "";
+        _credits.Visible = false;
+
         _barTrack.Location = new Point(12, 58);
         _barTrack.Size = new Size(196, 6);
         _barTrack.BackColor = Color.FromArgb(40, 40, 46);
@@ -694,6 +709,7 @@ internal sealed class MeterForm : Form
         _barTrack.Controls.Add(_barFill);
 
         Controls.Add(title);
+        Controls.Add(_credits);
         Controls.Add(_pct);
         Controls.Add(_sub);
         Controls.Add(_barTrack);
@@ -955,6 +971,7 @@ internal sealed class MeterForm : Form
             _pct.ForeColor = Color.FromArgb(220, 180, 80);
             _sub.Text = snap.Status;
             _barFill.Width = 0;
+            _credits.Visible = false;
             _tray.Text = "Grok: " + snap.Status;
             return;
         }
@@ -972,7 +989,18 @@ internal sealed class MeterForm : Form
 
         _barFill.Width = (int)Math.Round(_barTrack.Width * used / 100.0);
         _barFill.BackColor = _pct.ForeColor;
-        _tray.Text = $"Grok {used:0}%  {reset}";
+
+        if (snap.ExtraCreditsUsd is > 0)
+        {
+            _credits.Text = $"${snap.ExtraCreditsUsd.Value:0.00} left";
+            _credits.Visible = true;
+            _tray.Text = $"Grok {used:0}%  ${snap.ExtraCreditsUsd.Value:0.00} left  {reset}";
+        }
+        else
+        {
+            _credits.Visible = false;
+            _tray.Text = $"Grok {used:0}%  {reset}";
+        }
     }
 
     private static string RelTime(DateTimeOffset end)
