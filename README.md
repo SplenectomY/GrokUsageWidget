@@ -6,8 +6,6 @@ Always-on-top Windows meter for the SuperGrok **weekly** usage pool. Current ver
 
 <img width="215" height="68" alt="image" src="https://github.com/user-attachments/assets/7d651981-69d4-46c7-a0c4-7e3e21630428" />
 
-Versions follow [SemVer](https://semver.org/). Git tags are `vMAJOR.MINOR.PATCH`.
-
 New to Grok, first-time setup, or wondering whether this helps with Unity / MCP / the browser? See **[Getting started](docs/Getting-Started.md)**.
 
 ## Download
@@ -58,11 +56,3 @@ dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=
 - Crashes and launches append `%USERPROFILE%\.grok\usage-widget.log`.
 
 If the bar says **login**, run `grok login` in a normal user PowerShell, then Refresh.
-
-## Versioning
-
-- Patch `0.1.x` / `0.2.x` — fixes (token refresh, DPI, icon, launch).
-- Minor `0.x.0` — features that stay compatible.
-- Major `x.0.0` — breaking changes.
-
-Tag `v0.2.3` (or bump `Version` in the csproj and tag `v0.2.4`) to cut a release. `.github/workflows/release.yml` builds on `windows-latest` and uploads the exe.
