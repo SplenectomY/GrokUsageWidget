@@ -2,7 +2,7 @@
 
 [![Release](https://img.shields.io/github/v/release/SplenectomY/GrokUsageWidget)](https://github.com/SplenectomY/GrokUsageWidget/releases)
 
-Always-on-top Windows meter for the SuperGrok **weekly** usage pool. Current version: **0.2.5**.
+Always-on-top Windows meter for the SuperGrok **weekly** usage pool. Current version: **0.2.6**.
 
 <img width="215" height="68" alt="image" src="https://github.com/user-attachments/assets/7d651981-69d4-46c7-a0c4-7e3e21630428" />
 

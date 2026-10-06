@@ -16,4 +16,4 @@ Do not cut a release for a refactor or docs-only change unless asked.
 
 To release: bump the csproj versions and `CHANGELOG.md`, commit, tag `vX.Y.Z`, push `main` and the tag. `.github/workflows/release.yml` builds on `windows-latest` and uploads a self-contained single-file `win-x64` exe. Do not publish a framework-dependent stub.
 
-Current release: **0.2.5**.
+Current release: **0.2.6**.

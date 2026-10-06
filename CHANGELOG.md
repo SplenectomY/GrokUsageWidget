@@ -4,6 +4,11 @@ All notable changes are versioned with [SemVer](https://semver.org/): `MAJOR.MIN
 
 Git tags are `vMAJOR.MINOR.PATCH` (example: `v0.1.0`).
 
+## [0.2.6] — 2026-10-06
+
+### Changed
+- Extra credits (`$2.45 left`) only appear once the weekly pool is at 100%. Below that the card stays a percent meter.
+
 ## [0.2.5] — 2026-10-04
 
 ### Fixed

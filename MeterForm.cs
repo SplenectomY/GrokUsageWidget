@@ -366,7 +366,7 @@ internal sealed class MeterForm : Form
         _barFill.Width = (int)Math.Round(_barTrack.Width * used / 100.0);
         _barFill.BackColor = _pct.ForeColor;
 
-        if (snap.ExtraCreditsUsd is > 0)
+        if (used >= 100 && snap.ExtraCreditsUsd is > 0)
         {
             _credits.Text = $"${snap.ExtraCreditsUsd.Value:0.00} left";
             _credits.Visible = true;
